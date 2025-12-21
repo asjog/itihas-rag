@@ -1,0 +1,19 @@
+# Web framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# Search engine
+xapian-bindings>=0.1.0
+
+# Text processing and fuzzy matching
+rapidfuzz>=3.5.0
+indic-nlp-library>=0.92
+
+# Utilities
+python-dotenv>=1.0.0
+pydantic>=2.5.0
+
+# Phase 2: Semantic Search (uncomment when needed)
+# sentence-transformers>=2.2.0
+# chromadb>=0.4.0
+# torch>=2.0.0

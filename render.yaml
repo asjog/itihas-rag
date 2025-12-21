@@ -1,0 +1,17 @@
+# Render.com deployment configuration
+services:
+  - type: web
+    name: itihas-rag
+    env: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: CORPUS_DIR
+        value: ./corpus
+      - key: INDEX_DIR
+        value: ./indexes
+      - key: VECTOR_DIR
+        value: ./vectors
+      - key: PORT
+        value: 8000
+    healthCheckPath: /api/health
+
