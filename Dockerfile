@@ -1,5 +1,5 @@
 # Dockerfile for itihas-rag Marathi Text Search Application
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 # Install system dependencies including Xapian
 RUN apt-get update && apt-get install -y \
