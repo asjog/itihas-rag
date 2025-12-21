@@ -29,6 +29,9 @@ EXPOSE 8000
 # Set Python path to include xapian
 ENV PYTHONPATH="/usr/lib/python3/dist-packages:${PYTHONPATH}"
 
+# Build the search index during container build (faster startup)
+RUN python scripts/index_corpus.py
+
 # Run the application
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
