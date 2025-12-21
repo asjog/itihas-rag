@@ -41,7 +41,7 @@ wheels/
 Thumbs.db
 
 # Project specific
-indexes/
+# indexes/  # Committed for faster deployment
 vectors/
 *.log
 *.png
