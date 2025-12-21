@@ -3,7 +3,8 @@ fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
 
 # Search engine
-xapian-bindings>=0.1.0
+# xapian is installed via system package (python3-xapian) in Dockerfile
+# Do not install xapian-bindings from PyPI as it conflicts with system package
 
 # Text processing and fuzzy matching
 rapidfuzz>=3.5.0
