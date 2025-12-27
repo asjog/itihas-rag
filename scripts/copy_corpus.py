@@ -29,10 +29,16 @@ def find_riyasat_folders(base_path: Path) -> list[Path]:
     return riyasat_folders
 
 
-def copy_files(source_folders: list[Path], dest_dir: Path, dry_run: bool = False) -> dict:
+def copy_files(source_folders: list[Path], dest_dir: Path, dry_run: bool = False, force: bool = False) -> dict:
     """
     Copy text files from source folders to destination,
     prefixing filenames with the parent folder name.
+    
+    Args:
+        source_folders: List of source folders containing text files
+        dest_dir: Destination directory
+        dry_run: If True, only show what would be copied
+        force: If True, overwrite existing files
     """
     dest_dir.mkdir(parents=True, exist_ok=True)
     
@@ -40,6 +46,7 @@ def copy_files(source_folders: list[Path], dest_dir: Path, dry_run: bool = False
         "total": 0,
         "copied": 0,
         "skipped": 0,
+        "overwritten": 0,
         "errors": 0
     }
     
@@ -64,19 +71,28 @@ def copy_files(source_folders: list[Path], dest_dir: Path, dry_run: bool = False
             new_name = f"{prefix}_{txt_file.name}"
             dest_path = dest_dir / new_name
             
-            if dest_path.exists():
+            if dest_path.exists() and not force:
                 print(f"  Skipping (exists): {new_name}")
                 stats["skipped"] += 1
                 continue
             
             try:
+                file_exists = dest_path.exists()
                 if dry_run:
-                    print(f"  Would copy: {txt_file.name} → {new_name}")
+                    if file_exists:
+                        print(f"  Would overwrite: {txt_file.name} → {new_name}")
+                    else:
+                        print(f"  Would copy: {txt_file.name} → {new_name}")
                 else:
                     shutil.copy2(txt_file, dest_path)
-                    if stats["copied"] < 5 or stats["copied"] % 100 == 0:
-                        print(f"  Copied: {txt_file.name} → {new_name}")
-                stats["copied"] += 1
+                    if file_exists and force:
+                        stats["overwritten"] += 1
+                        if stats["overwritten"] < 5 or stats["overwritten"] % 100 == 0:
+                            print(f"  Overwritten: {txt_file.name} → {new_name}")
+                    else:
+                        stats["copied"] += 1
+                        if stats["copied"] < 5 or stats["copied"] % 100 == 0:
+                            print(f"  Copied: {txt_file.name} → {new_name}")
             except Exception as e:
                 print(f"  Error copying {txt_file.name}: {e}")
                 stats["errors"] += 1
@@ -108,6 +124,11 @@ def main():
         default="riyasat",
         help="Pattern to match in folder names (default: riyasat)"
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite existing files in destination directory"
+    )
     
     args = parser.parse_args()
     
@@ -133,14 +154,18 @@ def main():
     
     if args.dry_run:
         print("\n[DRY RUN - no files will be copied]")
+    if args.force:
+        print("\n[FORCE MODE - existing files will be overwritten]")
     
     # Copy files
-    stats = copy_files(riyasat_folders, dest_path, dry_run=args.dry_run)
+    stats = copy_files(riyasat_folders, dest_path, dry_run=args.dry_run, force=args.force)
     
     print(f"\n{'=' * 50}")
     print(f"Summary:")
     print(f"  Total files found: {stats['total']}")
     print(f"  Copied: {stats['copied']}")
+    if args.force and stats['overwritten'] > 0:
+        print(f"  Overwritten: {stats['overwritten']}")
     print(f"  Skipped (already exist): {stats['skipped']}")
     print(f"  Errors: {stats['errors']}")
     print(f"  Destination: {dest_path.absolute()}")
