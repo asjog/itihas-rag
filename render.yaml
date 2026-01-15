@@ -10,10 +10,14 @@ services:
       - key: INDEX_DIR
         value: ./indexes
       - key: VECTORS_DIR
-        value: ./vectors
+        value: /data/vectors
       - key: PORT
         value: 8000
       - key: GOOGLE_API_KEY
         sync: false  # Sync from Render dashboard instead of hardcoding
     healthCheckPath: /api/health
+    disk:
+      name: vectors-disk
+      mountPath: /data
+      sizeGB: 1
 
