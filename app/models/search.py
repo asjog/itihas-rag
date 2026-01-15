@@ -32,8 +32,32 @@ class SearchResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     """Health check response."""
-    
+
     status: str = Field(default="ok")
     index_loaded: bool = Field(..., description="Whether the search index is loaded")
     document_count: int = Field(default=0, description="Number of indexed documents")
+
+
+class SemanticSearchResult(BaseModel):
+    """Individual semantic search result."""
+
+    chunk_id: str = Field(..., description="Unique chunk identifier")
+    text: str = Field(..., description="Text content of the chunk")
+    book: str = Field(..., description="Book name")
+    source_file: str = Field(..., description="English source file path")
+    marathi_source_file: str = Field(default="", description="Marathi source file path")
+    chunk_index: int = Field(..., description="Chunk index in the book")
+    char_count: int = Field(..., description="Character count")
+    page_range: str = Field(default="", description="Page range")
+    distance: float = Field(..., description="Embedding distance (lower is better)")
+    similarity: float = Field(..., description="Similarity percentage (0-100)")
+
+
+class SemanticSearchResponse(BaseModel):
+    """Semantic search API response model."""
+
+    query: str = Field(..., description="Original query")
+    results: list[SemanticSearchResult] = Field(default_factory=list, description="Search results")
+    total: int = Field(..., description="Total number of results")
+    summary: str | None = Field(None, description="AI-generated summary")
 

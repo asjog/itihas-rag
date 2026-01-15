@@ -13,8 +13,7 @@ indic-nlp-library>=0.92
 # Utilities
 python-dotenv>=1.0.0
 pydantic>=2.5.0
+requests>=2.31.0
 
-# Phase 2: Semantic Search (uncomment when needed)
-# sentence-transformers>=2.2.0
-# chromadb>=0.4.0
-# torch>=2.0.0
+# Semantic Search (Gemini + ChromaDB)
+chromadb>=0.4.0

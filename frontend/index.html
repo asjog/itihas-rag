@@ -383,6 +383,134 @@
             text-decoration: underline;
         }
 
+        /* Tab Navigation */
+        .tab-container {
+            display: flex;
+            gap: 0.5rem;
+            margin: 2rem auto;
+            max-width: 900px;
+            padding: 0 2rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tab-btn {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Noto Sans Devanagari', system-ui, sans-serif;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        /* Tab Panels */
+        .tab-content {
+            position: relative;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* Semantic Search Specific Styles */
+        #semanticResults .summary-section {
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(247, 197, 159, 0.05) 100%);
+            border: 1px solid var(--accent-primary);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        #semanticResults .summary-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #semanticResults .summary-badge {
+            font-size: 0.75rem;
+            background: var(--bg-secondary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            color: var(--text-secondary);
+        }
+
+        #semanticResults .summary-content {
+            color: var(--text-primary);
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+
+        #semanticResults .sources-divider {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent-secondary);
+            margin: 2rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        #semanticResults .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        #semanticResults .result-meta {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+        }
+
+        #semanticResults .result-content {
+            color: var(--text-primary);
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+
+        #semanticResults .result-scores {
+            display: flex;
+            gap: 1.5rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.85rem;
+        }
+
+        #semanticResults .score {
+            color: var(--text-muted);
+        }
+
+        #semanticResults .score-value {
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
         /* Responsive */
         @media (max-width: 640px) {
             .container {
@@ -411,7 +539,18 @@
             <p class="subtitle">Itihas Search Engine</p>
         </header>
 
-        <section class="search-section">
+        <div class="tab-container">
+            <button class="tab-btn active" data-tab="keyword">
+                🔍 Keyword Search
+            </button>
+            <button class="tab-btn" data-tab="semantic">
+                🧠 Semantic Search
+            </button>
+        </div>
+
+        <div class="tab-content">
+            <div id="keyword-panel" class="tab-panel active">
+                <section class="search-section">
             <form class="search-form" id="searchForm">
                 <div class="search-input-wrapper">
                     <input 
@@ -455,6 +594,59 @@
                 <p style="font-size: 0.9rem; margin-top: 0.5rem;">Search in Marathi or English</p>
             </div>
         </section>
+            </div>
+
+            <div id="semantic-panel" class="tab-panel">
+                <section class="search-section">
+                    <form class="search-form" id="semanticSearchForm">
+                        <div class="search-input-wrapper">
+                            <input
+                                type="text"
+                                class="search-input"
+                                id="semanticQuery"
+                                placeholder="Ask a question in English or Marathi..."
+                                autocomplete="off"
+                                spellcheck="false"
+                            >
+                        </div>
+                        <button type="submit" class="search-btn" id="semanticSearchBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            Search
+                        </button>
+                    </form>
+
+                    <div class="search-options">
+                        <label class="option-label">
+                            <input type="checkbox" id="generateSummary" checked>
+                            Generate AI Summary
+                        </label>
+                        <label class="option-label" style="margin-left: 1rem;">
+                            Results:
+                            <input type="number" id="resultLimit" value="20" min="1" max="100" style="width: 60px; margin-left: 0.5rem; padding: 0.25rem; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px;">
+                        </label>
+                    </div>
+
+                    <div class="status-bar" id="semanticStatus">
+                        <div class="status-indicator">
+                            <div class="status-dot offline"></div>
+                            <span>Checking ChromaDB...</span>
+                        </div>
+                        <span>-</span>
+                    </div>
+                </section>
+
+                <section class="results-section" id="semanticResults">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🧠</div>
+                        <p>Ask a question about Marathi history</p>
+                        <p style="font-size: 0.9rem; margin-top: 0.5rem;">AI-powered semantic search with bilingual sources</p>
+                    </div>
+                </section>
+            </div>
+        </div>
 
         <footer>
             <p>Powered by Xapian + RapidFuzz | <a href="/docs">API Documentation</a></p>
@@ -663,15 +855,161 @@
             resultsSection.innerHTML = resultsHtml;
         }
         
+        // Tab Switching Logic
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetTab = btn.dataset.tab;
+
+                // Update active states
+                tabButtons.forEach(b => b.classList.remove('active'));
+                tabPanels.forEach(p => p.classList.remove('active'));
+
+                btn.classList.add('active');
+                document.getElementById(`${targetTab}-panel`).classList.add('active');
+
+                // Load health status for semantic tab
+                if (targetTab === 'semantic') {
+                    loadSemanticHealth();
+                }
+            });
+        });
+
+        // Semantic Search Health Check
+        async function loadSemanticHealth() {
+            const semanticStatus = document.getElementById('semanticStatus');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/semantic/health`);
+                const data = await response.json();
+
+                semanticStatus.innerHTML = `
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <span>ChromaDB loaded</span>
+                    </div>
+                    <span>${data.chunks.toLocaleString()} chunks</span>
+                `;
+            } catch (error) {
+                semanticStatus.innerHTML = `
+                    <div class="status-indicator">
+                        <div class="status-dot offline"></div>
+                        <span>ChromaDB unavailable</span>
+                    </div>
+                    <span>-</span>
+                `;
+            }
+        }
+
+        // Semantic Search Form Handler
+        const semanticSearchForm = document.getElementById('semanticSearchForm');
+        const semanticQuery = document.getElementById('semanticQuery');
+        const generateSummary = document.getElementById('generateSummary');
+        const resultLimit = document.getElementById('resultLimit');
+        const semanticResults = document.getElementById('semanticResults');
+
+        semanticSearchForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const query = semanticQuery.value.trim();
+            if (!query) return;
+
+            const limit = resultLimit.value;
+            const summarize = generateSummary.checked;
+
+            semanticResults.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Searching...</p>
+                </div>
+            `;
+
+            try {
+                const params = new URLSearchParams({ query, limit, summarize });
+                const response = await fetch(`${API_BASE}/api/semantic/search?${params}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                renderSemanticResults(data);
+            } catch (error) {
+                semanticResults.innerHTML = `
+                    <div class="error-message">Error: ${error.message}</div>
+                `;
+            }
+        });
+
+        // Render Semantic Search Results
+        function renderSemanticResults(data) {
+            if (data.results.length === 0) {
+                semanticResults.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">😕</div>
+                        <p>No results found for "${escapeHtml(data.query)}"</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Build summary section if available
+            const summaryHtml = data.summary ? `
+                <div class="summary-section">
+                    <div class="summary-header">
+                        🧠 AI-Generated Summary
+                        <span class="summary-badge">Gemini 2.5 Flash</span>
+                    </div>
+                    <div class="summary-content">${escapeHtml(data.summary)}</div>
+                </div>
+            ` : '';
+
+            const resultsHtml = `
+                ${summaryHtml}
+
+                <div class="sources-divider">📚 Source Documents (${data.total})</div>
+
+                ${data.results.map((result, idx) => `
+                    <div class="result-card">
+                        <div class="result-meta">
+                            <span>📚 ${escapeHtml(result.book)}</span>
+                            <span>📄 English: ${escapeHtml(result.source_file)}</span>
+                            ${result.marathi_source_file ? `<span>📖 Marathi: ${escapeHtml(result.marathi_source_file)}</span>` : ''}
+                            <span>📍 chunk #${result.chunk_index} (${result.char_count} chars)</span>
+                            ${result.page_range ? `<span>📄 Pages: ${escapeHtml(result.page_range)}</span>` : ''}
+                        </div>
+                        <div class="result-content">${escapeHtml(result.text)}</div>
+                        <div class="result-scores">
+                            <span class="score">Similarity: <span class="score-value">${result.similarity}%</span></span>
+                            <span class="score">Distance: <span class="score-value">${result.distance}</span></span>
+                            <span class="score">Rank: <span class="score-value">#${idx + 1}</span></span>
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+
+            semanticResults.innerHTML = resultsHtml;
+        }
+
+        // HTML escape utility
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         // Event listeners
         searchForm.addEventListener('submit', (e) => {
             e.preventDefault();
             performSearch(searchQuery.value);
         });
-        
+
         // Initialize
         checkHealth();
-        
+        loadSemanticHealth();
+
         // Periodically check health
         setInterval(checkHealth, 30000);
     </script>

@@ -21,8 +21,11 @@ from app.models.search import (
     SearchQuery,
     SearchResponse,
     SearchResult,
+    SemanticSearchResponse,
+    SemanticSearchResult,
 )
 from app.search.keyword import KeywordSearcher, get_searcher
+from app.search.semantic import SemanticSearcher
 from app.utils.context import extract_context
 
 # Load environment variables
@@ -31,10 +34,12 @@ load_dotenv()
 # Configuration - use absolute paths based on project root
 PROJECT_ROOT = Path(__file__).parent.parent
 INDEX_DIR = os.getenv("INDEX_DIR", str(PROJECT_ROOT / "indexes"))
+VECTORS_DIR = os.getenv("VECTORS_DIR", str(PROJECT_ROOT / "vectors"))
 DEFAULT_RESULT_LIMIT = int(os.getenv("DEFAULT_RESULT_LIMIT", "20"))
 
-# Global searcher instance
+# Global searcher instances
 searcher: Optional[KeywordSearcher] = None
+semantic_searcher: Optional[SemanticSearcher] = None
 
 
 def get_or_init_searcher() -> Optional[KeywordSearcher]:
@@ -51,24 +56,40 @@ def get_or_init_searcher() -> Optional[KeywordSearcher]:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager - initialize resources on startup."""
-    global searcher
-    
-    # Initialize the searcher
+    global searcher, semantic_searcher
+
+    # Initialize keyword searcher
     try:
         searcher = KeywordSearcher(INDEX_DIR)
         if searcher.is_loaded:
-            print(f"✓ Search index loaded: {searcher.document_count} documents")
+            print(f"✓ Keyword search index loaded: {searcher.document_count} documents")
         else:
-            print("⚠ Search index not found. Run scripts/index_corpus.py first.")
+            print("⚠ Keyword search index not found. Run scripts/index_corpus.py first.")
     except Exception as e:
-        print(f"⚠ Failed to load search index: {e}")
+        print(f"⚠ Failed to load keyword search index: {e}")
         searcher = None
-    
+
+    # Initialize semantic searcher
+    try:
+        semantic_searcher = SemanticSearcher(
+            vectors_dir=Path(VECTORS_DIR),
+            collection_name="marathi_history"
+        )
+        if semantic_searcher.is_loaded:
+            print(f"✓ Semantic search loaded: {semantic_searcher.chunk_count} chunks")
+        else:
+            print("⚠ Semantic search ChromaDB not found.")
+    except Exception as e:
+        print(f"⚠ Failed to load semantic search: {e}")
+        semantic_searcher = None
+
     yield
-    
+
     # Cleanup on shutdown
     if searcher is not None:
         searcher = None
+    if semantic_searcher is not None:
+        semantic_searcher = None
 
 
 # Create FastAPI app
@@ -270,19 +291,87 @@ async def search_exact(
         )
 
 
+@app.get("/api/semantic/health")
+async def semantic_health():
+    """
+    Semantic search health check.
+
+    Returns the status of the ChromaDB vector database.
+    """
+    if semantic_searcher is None or not semantic_searcher.is_loaded:
+        raise HTTPException(
+            status_code=503,
+            detail="ChromaDB not available"
+        )
+
+    return {
+        "status": "ok",
+        "chunks": semantic_searcher.chunk_count,
+        "collection": semantic_searcher.collection_name
+    }
+
+
+@app.get("/api/semantic/search", response_model=SemanticSearchResponse)
+async def semantic_search(
+    query: str = Query(..., min_length=1, description="Search query in English or Marathi"),
+    limit: int = Query(20, ge=1, le=100, description="Number of results (1-100)"),
+    summarize: bool = Query(True, description="Generate AI summary")
+):
+    """
+    Semantic search using Gemini embeddings and ChromaDB.
+
+    Performs AI-powered semantic search with optional summarization.
+    Includes bilingual source references (English + Marathi).
+
+    - **query**: Search query in English or Marathi
+    - **limit**: Maximum number of results (1-100, default: 20)
+    - **summarize**: Whether to generate AI summary (default: true)
+    """
+    if semantic_searcher is None or not semantic_searcher.is_loaded:
+        raise HTTPException(
+            status_code=503,
+            detail="Semantic search not available. ChromaDB not loaded."
+        )
+
+    try:
+        result = semantic_searcher.search(
+            query=query,
+            limit=limit,
+            include_summary=summarize
+        )
+
+        # Convert results to response model
+        search_results = [
+            SemanticSearchResult(**r) for r in result["results"]
+        ]
+
+        return SemanticSearchResponse(
+            query=result["query"],
+            results=search_results,
+            total=result["total"],
+            summary=result.get("summary")
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Semantic search failed: {str(e)}"
+        )
+
+
 @app.get("/api/reload")
 async def reload_index():
     """
     Reload the search index.
-    
+
     Call this endpoint after re-indexing the corpus
     to pick up the new documents.
     """
     current_searcher = get_or_init_searcher()
-    
+
     if current_searcher is None:
         raise HTTPException(status_code=503, detail="Searcher not initialized")
-    
+
     try:
         current_searcher.reload_index()
         return {
