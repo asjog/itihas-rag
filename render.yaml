@@ -9,9 +9,11 @@ services:
         value: ./corpus
       - key: INDEX_DIR
         value: ./indexes
-      - key: VECTOR_DIR
+      - key: VECTORS_DIR
         value: ./vectors
       - key: PORT
         value: 8000
+      - key: GOOGLE_API_KEY
+        sync: false  # Sync from Render dashboard instead of hardcoding
     healthCheckPath: /api/health
 
