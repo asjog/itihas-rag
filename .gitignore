@@ -42,7 +42,7 @@ Thumbs.db
 
 # Project specific
 # indexes/  # Committed for faster deployment
-vectors/
+# vectors/  # Now tracked with Git LFS
 *.log
 *.png
 *.jpeg
