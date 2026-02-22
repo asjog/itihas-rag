@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Script to copy text files from multiple source folders to the corpus directory,
+Script to copy text files from all book folders to the corpus directory,
 renaming them to include the parent folder name to avoid conflicts.
 
 Example:
-  /source/marathi-riyasat-purvardha/text/page_0000.txt
-  → corpus/marathi-riyasat-purvardha_page_0000.txt
+  /source/chhatrapati-shivaajii/text/page_0000.txt
+  → corpus/chhatrapati-shivaajii_page_0000.txt
 """
 
 import argparse
@@ -13,20 +13,20 @@ import shutil
 from pathlib import Path
 
 
-def find_riyasat_folders(base_path: Path) -> list[Path]:
-    """Find all folders containing 'riyasat' in their name."""
-    riyasat_folders = []
-    
-    for path in base_path.rglob("*"):
-        if path.is_dir() and "riyasat" in path.name.lower():
+def find_book_folders(base_path: Path) -> list[Path]:
+    """Find all book folders that have a text/ subfolder or .txt files."""
+    book_folders = []
+
+    for path in sorted(base_path.iterdir()):
+        if path.is_dir():
             # Check if this folder has a 'text' subdirectory or contains .txt files
             text_subdir = path / "text"
             if text_subdir.exists():
-                riyasat_folders.append(text_subdir)
+                book_folders.append(text_subdir)
             elif list(path.glob("*.txt")):
-                riyasat_folders.append(path)
-    
-    return riyasat_folders
+                book_folders.append(path)
+
+    return book_folders
 
 
 def copy_files(source_folders: list[Path], dest_dir: Path, dry_run: bool = False, force: bool = False) -> dict:
@@ -102,7 +102,7 @@ def copy_files(source_folders: list[Path], dest_dir: Path, dry_run: bool = False
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Copy text files from riyasat folders to corpus directory"
+        description="Copy text files from book folders to corpus directory"
     )
     parser.add_argument(
         "--source",
@@ -120,11 +120,6 @@ def main():
         help="Show what would be copied without actually copying"
     )
     parser.add_argument(
-        "--pattern",
-        default="riyasat",
-        help="Pattern to match in folder names (default: riyasat)"
-    )
-    parser.add_argument(
         "--force",
         action="store_true",
         help="Overwrite existing files in destination directory"
@@ -139,17 +134,17 @@ def main():
         print(f"Error: Source path does not exist: {source_path}")
         return 1
     
-    print(f"Searching for folders with '{args.pattern}' in: {source_path}")
-    
+    print(f"Searching for book folders in: {source_path}")
+
     # Find folders
-    riyasat_folders = find_riyasat_folders(source_path)
-    
-    if not riyasat_folders:
-        print(f"No folders with '{args.pattern}' found.")
+    book_folders = find_book_folders(source_path)
+
+    if not book_folders:
+        print("No book folders found.")
         return 1
-    
-    print(f"\nFound {len(riyasat_folders)} folders:")
-    for folder in riyasat_folders:
+
+    print(f"\nFound {len(book_folders)} folders:")
+    for folder in book_folders:
         print(f"  - {folder}")
     
     if args.dry_run:
@@ -158,7 +153,7 @@ def main():
         print("\n[FORCE MODE - existing files will be overwritten]")
     
     # Copy files
-    stats = copy_files(riyasat_folders, dest_path, dry_run=args.dry_run, force=args.force)
+    stats = copy_files(book_folders, dest_path, dry_run=args.dry_run, force=args.force)
     
     print(f"\n{'=' * 50}")
     print(f"Summary:")
